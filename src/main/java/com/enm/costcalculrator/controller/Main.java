@@ -37,6 +37,7 @@ public class Main {
             scheduleDTO.setEndTime("2023-09-18T19:00:00");
         }
 
+        System.out.println("controlloer schedulDTO: " +scheduleDTO);
         PathAndCostAndAnalysisDTO result = calculatorService.calculate(scheduleDTO);
 
         return result;
