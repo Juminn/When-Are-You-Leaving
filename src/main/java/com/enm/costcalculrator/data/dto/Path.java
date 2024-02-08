@@ -46,6 +46,14 @@ public class Path {
         }
     }
 
+    //test
+//    public void walkDestination(){
+//        for(Step step: legs.get(0).getSteps()){
+//            step.getWalkpath()
+//        }
+//            System.out.println();
+//    }
+
 
 }
 
@@ -61,11 +69,33 @@ class Step {
     private String type;
     private int duration;
     private String departureTime;
-    private ArrayList<Route> routes;
+    private ArrayList<Route> routes; // 한 구간일 이동할때 가능한 버스들, 지하철들
+    private Walkpath walkpath; // 상세경로 - 걷기 전용
+    private ArrayList<Station> stations; // 상세경로 - 버스,지하철 전용
 }
 
-//하나의 구간을 이동하는 여러루트 중 하나
+//버스, 지하철전용, 하나의 구간을 이동하는 여러루트 중 하나
 @Data
 class Route{
+    private String name;
+}
+
+@Data
+class Walkpath{
+    private Summary summary;
+}
+
+@Data
+class Summary{
+    private ArrayList<way> ways;
+}
+
+@Data
+class way{
+    private String name;
+}
+
+@Data
+class Station{
     private String name;
 }

@@ -45,7 +45,15 @@ public class CalculatorServiceImpl implements CalculatorService {
             PathRequestDTO pathRequestDTO = makeRouteRequestDTO(scheduleDTO, targetTime);
 
             ArrayList<Path> paths = mapService.getPathFromNaverMapAPI(pathRequestDTO);
-            MemberTransportCostDTO memberTransportCostDTO = memberService.getMemberTransportCost("65f2a9c5-00c7-4c59-9b23-f984c3b50418");
+
+
+
+            //memberTransportCostDTO = memberService.getMemberTransportCost("65f2a9c5-00c7-4c59-9b23-f984c3b50418");
+
+            MemberTransportCostDTO memberTransportCostDTO = new MemberTransportCostDTO(scheduleDTO.getOpportunityCost(), scheduleDTO.getWalkingCost(), scheduleDTO.getBusCost(), scheduleDTO.getSubwayCost());
+
+            System.out.println("mytest: " + memberTransportCostDTO);
+
             //example Path and Cost AnalysisDTO identity
             PathAndCostAndAnalysisDTO pathAndCostAndAnalysisDTO = new PathAndCostAndAnalysisDTO();
             ArrayList<PathAndCost> pathAndCosts = new ArrayList<PathAndCost>();
