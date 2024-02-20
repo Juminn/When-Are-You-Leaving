@@ -11,6 +11,11 @@ public class WebConfig implements WebMvcConfigurer {
         // CORS 설정
         registry.addMapping("/**")
                 .allowedOrigins("https://localhost:3000")
-                .allowedOrigins("http://localhost:3000");
+                .allowedOrigins("http://localhost:3000")
+                .allowedOrigins(
+                        "https://d1y6ebwgoivo5n.cloudfront.net",
+                        "http://d1y6ebwgoivo5n.cloudfront.net",
+                        "https://www.d1y6ebwgoivo5n.cloudfront.net",
+                        "http://www.d1y6ebwgoivo5n.cloudfront.net");
     }
 }
