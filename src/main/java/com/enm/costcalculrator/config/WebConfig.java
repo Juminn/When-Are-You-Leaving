@@ -10,14 +10,15 @@ public class WebConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         // CORS 설정
         registry.addMapping("/**")
-                .allowedOrigins("https://localhost:3000")
-                .allowedOrigins("http://localhost:3000")
                 .allowedOrigins(
+                        "https://localhost:3000",
+                        "http://localhost:3000",
+
                         "https://d1y6ebwgoivo5n.cloudfront.net",
                         "http://d1y6ebwgoivo5n.cloudfront.net",
                         "https://www.d1y6ebwgoivo5n.cloudfront.net",
-                        "http://www.d1y6ebwgoivo5n.cloudfront.net")
-                .allowedOrigins(
+                        "http://www.d1y6ebwgoivo5n.cloudfront.net",
+
                         "https://xn--ih3bt9oq0b6yi50k.com",
                         "http://xn--ih3bt9oq0b6yi50k.com",
                         "https://www.xn--ih3bt9oq0b6yi50k.com",
