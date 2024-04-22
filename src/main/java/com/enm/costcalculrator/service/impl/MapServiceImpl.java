@@ -7,6 +7,7 @@ import com.enm.costcalculrator.service.MapService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.ArrayList;
 
@@ -73,6 +74,19 @@ public class MapServiceImpl implements MapService {
                 .baseUrl("https://map.naver.com")
                 .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(-1))
                 .build();
+
+        // URL 로그출력
+        String uriString = UriComponentsBuilder.fromUriString("https://map.naver.com")
+                .path("/p/api/directions/pubtrans")
+                .queryParam("start", pathRequestDTO.getStart())
+                .queryParam("goal", pathRequestDTO.getGoal())
+                .queryParam("crs", "EPSG:4326")
+                .queryParam("includeDetailOperation", "true")
+                .queryParam("lang", "ko")
+                .queryParam("mode", "TIME")
+                .queryParam("departureTime", pathRequestDTO.getDepartureTime())
+                .toUriString();
+        System.out.println("Request URL: " + uriString);
 
         ResponseEntity<PathResponseDTO> test = webClient.get()
                 .uri(uriBuilder -> uriBuilder.path("/p/api/directions/pubtrans")
