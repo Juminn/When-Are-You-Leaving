@@ -4,9 +4,11 @@ import com.enm.costcalculrator.data.dto.PathAndCostAndAnalysisDTO;
 import com.enm.costcalculrator.data.dto.ScheduleDTO;
 import com.enm.costcalculrator.service.CalculatorService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/")
@@ -25,7 +27,7 @@ public class Main {
     }
      
     @GetMapping(value = "/a")
-    public PathAndCostAndAnalysisDTO test2(ScheduleDTO scheduleDTO)
+    public ResponseEntity<?> test2(ScheduleDTO scheduleDTO)
     {
         //임시
         if(scheduleDTO.getGoalY() == null) {
@@ -40,7 +42,11 @@ public class Main {
         System.out.println("controlloer schedulDTO: " +scheduleDTO);
         PathAndCostAndAnalysisDTO result = calculatorService.calculate(scheduleDTO);
 
-        return result;
+        try {
+            return ResponseEntity.ok(calculatorService.calculate(scheduleDTO));
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatus()).body(e.getReason());
+        }
     }
 
 }
