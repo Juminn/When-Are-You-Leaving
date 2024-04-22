@@ -6,7 +6,9 @@ import com.enm.costcalculrator.service.CalculatorService;
 import com.enm.costcalculrator.service.MapService;
 import com.enm.costcalculrator.service.MemberService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -45,8 +47,9 @@ public class CalculatorServiceImpl implements CalculatorService {
             PathRequestDTO pathRequestDTO = makeRouteRequestDTO(scheduleDTO, targetTime);
 
             ArrayList<Path> paths = mapService.getPathFromNaverMapAPI(pathRequestDTO);
-
-
+            if(paths.size() == 0){
+                continue;
+            }
 
             //memberTransportCostDTO = memberService.getMemberTransportCost("65f2a9c5-00c7-4c59-9b23-f984c3b50418");
 
@@ -75,7 +78,11 @@ public class CalculatorServiceImpl implements CalculatorService {
         //while문 끝나고 DTOS에서 최솟값찾고 그 DTO반환
 
         //System.out.println(pathAndCostAndAnalysisDTOS);
-        pathAndCostAndAnalysisDTOS.get(0).getPathAndCosts().get(0).getPath().makeSubDuration();
+        if (pathAndCostAndAnalysisDTOS.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "대중교통 이용이 불가능한 시간입니다.");
+        }
+
+        //pathAndCostAndAnalysisDTOS.get(0).getPathAndCosts().get(0).getPath().makeSubDuration();
 
         return searchMinDTO(pathAndCostAndAnalysisDTOS);
     }
