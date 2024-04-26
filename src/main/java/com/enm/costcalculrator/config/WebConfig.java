@@ -22,6 +22,12 @@ public class WebConfig implements WebMvcConfigurer {
                         "https://xn--ih3bt9oq0b6yi50k.com",
                         "http://xn--ih3bt9oq0b6yi50k.com",
                         "https://www.xn--ih3bt9oq0b6yi50k.com",
-                        "http://www.xn--ih3bt9oq0b6yi50k.com");
+                        "http://www.xn--ih3bt9oq0b6yi50k.com",
+
+                        "https://xn--w39a06bmycv8qzokvne.com",
+                        "http://xn--w39a06bmycv8qzokvne.com",
+                        "https://www.xn--w39a06bmycv8qzokvne.com",
+                        "http://www.xn--w39a06bmycv8qzokvne.com"
+                );
     }
 }
