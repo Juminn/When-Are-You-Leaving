@@ -1,15 +1,14 @@
 package com.enm.costcalculrator.controller;
 
 import com.enm.costcalculrator.data.Survey.SurveyRequestDTO;
+import com.enm.costcalculrator.data.Survey.SurveyResponseDTO;
 import com.enm.costcalculrator.data.dto.PathAndCostAndAnalysisDTO;
 import com.enm.costcalculrator.data.dto.ScheduleDTO;
 import com.enm.costcalculrator.service.CalculatorService;
 import com.enm.costcalculrator.service.Survey.SurveyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
@@ -57,10 +56,10 @@ public class Main {
         }
     }
 
-    @GetMapping(value =  "/survey/nextQuestion")
-    public ResponseEntity<?> createNextQuestion(SurveyRequestDTO surveyRequestDTO){
+    @PostMapping(value =  "/survey/nextQuestion")
+    public ResponseEntity<?> createNextQuestion(@RequestBody SurveyRequestDTO surveyRequestDTO){
 
-        System.out.println("Request:" +surveyRequestDTO);
+        System.out.println("survey/nextQuestion Request:" +surveyRequestDTO);
         //임시
         if(surveyRequestDTO.getOptions() == null){
             surveyRequestDTO = new SurveyRequestDTO();
@@ -69,7 +68,29 @@ public class Main {
         System.out.println(surveyRequestDTO);
 
         try {
-            return ResponseEntity.ok(surveyService.makeNextQuestion(surveyRequestDTO));
+            SurveyResponseDTO response = surveyService.makeNextQuestion(surveyRequestDTO);
+            System.out.println("response: " + response);
+            return ResponseEntity.ok(response);
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatus()).body(e.getReason());
+        }
+    }
+
+    @PostMapping(value =  "/survey/result")
+    public ResponseEntity<?> createSurveyResult(@RequestBody SurveyRequestDTO surveyRequestDTO){
+
+        System.out.println("survey/result Request:" +surveyRequestDTO);
+        //임시
+        if(surveyRequestDTO.getOptions() == null){
+            surveyRequestDTO = new SurveyRequestDTO();
+            surveyRequestDTO.setQuestionIndex(0);
+        }
+        System.out.println(surveyRequestDTO);
+
+        try {
+            SurveyResponseDTO response = surveyService.makeNextQuestion(surveyRequestDTO);
+            System.out.println("response: " + response);
+            return ResponseEntity.ok(response);
         } catch (ResponseStatusException e) {
             return ResponseEntity.status(e.getStatus()).body(e.getReason());
         }

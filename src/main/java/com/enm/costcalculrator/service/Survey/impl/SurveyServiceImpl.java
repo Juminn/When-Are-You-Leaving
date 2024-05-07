@@ -1,8 +1,6 @@
 package com.enm.costcalculrator.service.Survey.impl;
 
-import com.enm.costcalculrator.data.Survey.OptionDTO;
-import com.enm.costcalculrator.data.Survey.SurveyRequestDTO;
-import com.enm.costcalculrator.data.Survey.SurveyResponseDTO;
+import com.enm.costcalculrator.data.Survey.*;
 import com.enm.costcalculrator.service.Survey.SurveyService;
 import org.springframework.stereotype.Service;
 
@@ -33,8 +31,8 @@ public class SurveyServiceImpl implements SurveyService {
 
     }
 
-    private SurveyResponseDTO NextQuestion(SurveyRequestDTO surveyRequestDTO) {
 
+    public SurveyResultResponseDTO makeResult(SurveyResultRequestDTO surveyResultRequestDTO) {
 
         return null;
     }
@@ -77,24 +75,24 @@ public class SurveyServiceImpl implements SurveyService {
                     new OptionDTO("Walking", middleDuration),
                     new OptionDTO("Bus", middleDuration)
             );
-            return new SurveyResponseDTO(1, 0, options);
+            return new SurveyResponseDTO(1, 0, options, false);
         }
         else if(n==2){
             List<OptionDTO> options = Arrays.asList(
                     new OptionDTO("Walking", middleDuration),
                     new OptionDTO("Subway", middleDuration)
             );
-            return new SurveyResponseDTO(2, 0, options);
+            return new SurveyResponseDTO(2, 0, options, false);
         }
         else if(n==3){
             List<OptionDTO> options = Arrays.asList(
                     new OptionDTO("Walking", middleDuration),
                     new OptionDTO("Transfer", middleDuration)
             );
-            return new SurveyResponseDTO(3, 0, options);
+            return new SurveyResponseDTO(3, 0, options, false);
         }
         else if(n==4){
-            return new SurveyResponseDTO(4, 0, null);
+            return new SurveyResponseDTO(4, 0, null, true);
         }
 
         throw new RuntimeException();
@@ -105,9 +103,9 @@ public class SurveyServiceImpl implements SurveyService {
         //요청 시간 계산
         int Option1Duration;
 
-        if(surveyRequestDTO.getSelectedOption()==1){
+        if(surveyRequestDTO.getSelectedOption()==0){
             Option1Duration = surveyRequestDTO.getDurationOfOption(1) -5;
-        } else if (surveyRequestDTO.getSelectedOption()==2) {
+        } else if (surveyRequestDTO.getSelectedOption()==1) {
             Option1Duration = surveyRequestDTO.getDurationOfOption(1) +5;
         }
         else{

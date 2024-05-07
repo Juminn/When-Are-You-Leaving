@@ -1,5 +1,6 @@
 package com.enm.costcalculrator.data.Survey;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -17,4 +18,7 @@ public class SurveyResponseDTO {
 //    private String option2Transport;
 //    private int option2Duration;
     private List<OptionDTO> options;
+
+    @JsonProperty("isLastQuestion")
+    private boolean isLastQuestion;
 }
