@@ -10,5 +10,5 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SurveyResultRequestDTO {
-    private List SelectedOption;
+    private List<Integer> selectedOption;
 }
