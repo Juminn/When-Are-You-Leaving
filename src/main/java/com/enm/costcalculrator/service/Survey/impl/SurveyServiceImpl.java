@@ -11,7 +11,13 @@ import java.util.List;
 @Service
 public class SurveyServiceImpl implements SurveyService {
 
-    final int middleDuration = 30;
+    final int initTrasnPortDuration = 30;
+    final int initTransferNum = 2;
+
+    final int transportDurationChange = 5;
+    final int transperDuraitonChange = 1;
+
+
     public SurveyResponseDTO makeNextQuestion(SurveyRequestDTO surveyRequestDTO) {
 
         if(isFirstQuestion(surveyRequestDTO)){
@@ -32,10 +38,7 @@ public class SurveyServiceImpl implements SurveyService {
     }
 
 
-    public SurveyResultResponseDTO makeResult(SurveyResultRequestDTO surveyResultRequestDTO) {
 
-        return null;
-    }
 
     private boolean isFirstQuestion(SurveyRequestDTO surveyRequestDTO){
         if(surveyRequestDTO.getQuestionIndex() == 0) {
@@ -59,9 +62,9 @@ public class SurveyServiceImpl implements SurveyService {
     private int firstSelectedOption(SurveyRequestDTO surveyRequestDTO){
         int opt1Duration = surveyRequestDTO.getDurationOfOption(1);
 
-        if(opt1Duration < middleDuration){
+        if(opt1Duration < initTrasnPortDuration){
             return 0;
-        } else if (opt1Duration > middleDuration ) {
+        } else if (opt1Duration > initTrasnPortDuration) {
             return 1;
         }
         else {
@@ -72,22 +75,22 @@ public class SurveyServiceImpl implements SurveyService {
     private SurveyResponseDTO getNthQuestion(int n){
         if(n == 1) {
             List<OptionDTO> options = Arrays.asList(
-                    new OptionDTO("Walking", middleDuration),
-                    new OptionDTO("Bus", middleDuration)
+                    new OptionDTO("Walking", initTrasnPortDuration),
+                    new OptionDTO("Bus", initTrasnPortDuration)
             );
             return new SurveyResponseDTO(1, 0, options, false);
         }
         else if(n==2){
             List<OptionDTO> options = Arrays.asList(
-                    new OptionDTO("Walking", middleDuration),
-                    new OptionDTO("Subway", middleDuration)
+                    new OptionDTO("Walking", initTrasnPortDuration),
+                    new OptionDTO("Subway", initTrasnPortDuration)
             );
             return new SurveyResponseDTO(2, 0, options, false);
         }
         else if(n==3){
             List<OptionDTO> options = Arrays.asList(
-                    new OptionDTO("Walking", middleDuration),
-                    new OptionDTO("Transfer", middleDuration)
+                    new OptionDTO("Walking", initTrasnPortDuration),
+                    new OptionDTO("Transfer", initTransferNum)
             );
             return new SurveyResponseDTO(3, 0, options, false);
         }
@@ -103,10 +106,12 @@ public class SurveyServiceImpl implements SurveyService {
         //요청 시간 계산
         int Option1Duration;
 
+        int durationChange = surveyRequestDTO.getTransportOfOption(1).equals("Transfer") ? transperDuraitonChange : transportDurationChange;
+
         if(surveyRequestDTO.getSelectedOption()==0){
-            Option1Duration = surveyRequestDTO.getDurationOfOption(1) -5;
+            Option1Duration = surveyRequestDTO.getDurationOfOption(1) - durationChange;
         } else if (surveyRequestDTO.getSelectedOption()==1) {
-            Option1Duration = surveyRequestDTO.getDurationOfOption(1) +5;
+            Option1Duration = surveyRequestDTO.getDurationOfOption(1) + durationChange;
         }
         else{
             throw  new RuntimeException("func: firstQuestion , SelectedOption != 1 or 2");
@@ -126,5 +131,38 @@ public class SurveyServiceImpl implements SurveyService {
         surveyResponseDTO.setOptions(newOptions);
 
         return surveyResponseDTO;
+    }
+
+    //result관련 함수 시작
+//
+//    Null 29.99``` 50 80  3회
+//
+//    고르면 그 교통이 커진다. 즉 값이 클수록  좋은거잖아
+//    Walking 29.999분 = subway 60분= Bus 15분 = 환승 2회
+//
+//
+//    위의 경우 Bus > Subway > Walking 이고 환승 은 n번 평균을 기준으로 뭔가 추가하자
+//
+//    리턴값은 MBTI와
+//    Mbti는 walking 29.99로하고 큰순서대로 반환
+//    Walking은 14000 고정에
+//            Subway = 14000  * 30 / subway
+//    환승 = 14000 / ( 2 * 환승횟수)  = 7000 / 환승 횟수
+//
+//    Ex)
+//    {
+//        Mbti : BSW;
+//
+//        Walking : 14000 기준
+//        Subway: 7000
+//        Bus : 28000
+//    }
+
+    public SurveyResultResponseDTO makeResult(SurveyResultRequestDTO surveyResultRequestDTO) {
+        surveyResultRequestDTO.getSelectedOption().get(0);
+
+
+
+        return null;
     }
 }

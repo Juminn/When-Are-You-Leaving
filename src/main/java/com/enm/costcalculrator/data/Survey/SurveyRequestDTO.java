@@ -22,4 +22,7 @@ public class SurveyRequestDTO {
     public int getDurationOfOption(int optionIndex) {
         return options.get(optionIndex).getDuration();
     }
+    public String getTransportOfOption(int optionIndex) {
+        return options.get(optionIndex).getTransport();
+    }
 }
