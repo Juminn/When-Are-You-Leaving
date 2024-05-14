@@ -24,7 +24,7 @@ public class Path {
         Leg leg = legs.get(0);
 
         for(Step step: leg.getSteps()){
-            if (Objects.equals(step.getType(), transportation.toString())) {
+            if (transportation.includes(step.getType())) {
                 totalDuration += step.getDuration();
 
             }

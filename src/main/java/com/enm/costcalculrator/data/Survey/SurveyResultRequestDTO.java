@@ -10,5 +10,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SurveyResultRequestDTO {
-    private List<Integer> selectedOption;
+    private int bus;
+    private int subway;
+    private int transfer;
 }
