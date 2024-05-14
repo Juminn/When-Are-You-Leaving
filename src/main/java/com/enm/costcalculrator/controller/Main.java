@@ -2,6 +2,8 @@ package com.enm.costcalculrator.controller;
 
 import com.enm.costcalculrator.data.Survey.SurveyRequestDTO;
 import com.enm.costcalculrator.data.Survey.SurveyResponseDTO;
+import com.enm.costcalculrator.data.Survey.SurveyResultRequestDTO;
+import com.enm.costcalculrator.data.Survey.SurveyResultResponseDTO;
 import com.enm.costcalculrator.data.dto.PathAndCostAndAnalysisDTO;
 import com.enm.costcalculrator.data.dto.ScheduleDTO;
 import com.enm.costcalculrator.service.CalculatorService;
@@ -65,7 +67,6 @@ public class Main {
             surveyRequestDTO = new SurveyRequestDTO();
             surveyRequestDTO.setQuestionIndex(0);
         }
-        System.out.println(surveyRequestDTO);
 
         try {
             SurveyResponseDTO response = surveyService.makeNextQuestion(surveyRequestDTO);
@@ -77,18 +78,18 @@ public class Main {
     }
 
     @PostMapping(value =  "/survey/result")
-    public ResponseEntity<?> createSurveyResult(@RequestBody SurveyRequestDTO surveyRequestDTO){
+    public ResponseEntity<?> createSurveyResult(@RequestBody SurveyResultRequestDTO surveyResultRequestDTO){
 
-        System.out.println("survey/result Request:" +surveyRequestDTO);
+        System.out.println("survey/result Request:" +surveyResultRequestDTO);
         //임시
-        if(surveyRequestDTO.getOptions() == null){
-            surveyRequestDTO = new SurveyRequestDTO();
-            surveyRequestDTO.setQuestionIndex(0);
+        if(surveyResultRequestDTO.getBus() == 0){
+            surveyResultRequestDTO = new SurveyResultRequestDTO(20, 40, 2);
+
         }
-        System.out.println(surveyRequestDTO);
+
 
         try {
-            SurveyResponseDTO response = surveyService.makeNextQuestion(surveyRequestDTO);
+            SurveyResultResponseDTO response = surveyService.makeResult(surveyResultRequestDTO);
             System.out.println("response: " + response);
             return ResponseEntity.ok(response);
         } catch (ResponseStatusException e) {

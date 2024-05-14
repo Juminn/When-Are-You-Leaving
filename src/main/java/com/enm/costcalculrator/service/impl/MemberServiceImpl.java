@@ -28,7 +28,7 @@ public class MemberServiceImpl implements MemberService {
             MemberTransportCost memberTransportCost = memberTransportCostOpt.get();
 
             MemberTransportCostDTO memberTransportCostDTO = new MemberTransportCostDTO();
-            memberTransportCostDTO.setOpportunityCost(memberTransportCost.getOpportunityCost());
+            memberTransportCostDTO.setTransferCost(memberTransportCost.getOpportunityCost());
             memberTransportCostDTO.setBus(memberTransportCost.getBus());
             memberTransportCostDTO.setWalking(memberTransportCost.getWalking());
             memberTransportCostDTO.setSubway(memberTransportCost.getSubway());

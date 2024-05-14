@@ -1,15 +1,19 @@
 package com.enm.costcalculrator.service.Survey.impl;
 
 import com.enm.costcalculrator.data.Survey.*;
+import com.enm.costcalculrator.service.Survey.MbtiDescriptionManager;
 import com.enm.costcalculrator.service.Survey.SurveyService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class SurveyServiceImpl implements SurveyService {
+
+    @Autowired
+    private MbtiDescriptionManager mbtiDescriptionManager;
 
     final int initTrasnPortDuration = 30;
     final int initTransferNum = 2;
@@ -62,9 +66,12 @@ public class SurveyServiceImpl implements SurveyService {
     private int firstSelectedOption(SurveyRequestDTO surveyRequestDTO){
         int opt1Duration = surveyRequestDTO.getDurationOfOption(1);
 
-        if(opt1Duration < initTrasnPortDuration){
+        int initDuraiton = surveyRequestDTO.getTransportOfOption(1).equals("Transfer") ? initTransferNum : initTrasnPortDuration;
+
+
+        if(opt1Duration < initDuraiton){
             return 0;
-        } else if (opt1Duration > initTrasnPortDuration) {
+        } else if (opt1Duration > initDuraiton) {
             return 1;
         }
         else {
@@ -134,35 +141,44 @@ public class SurveyServiceImpl implements SurveyService {
     }
 
     //result관련 함수 시작
-//
-//    Null 29.99``` 50 80  3회
-//
-//    고르면 그 교통이 커진다. 즉 값이 클수록  좋은거잖아
-//    Walking 29.999분 = subway 60분= Bus 15분 = 환승 2회
-//
-//
-//    위의 경우 Bus > Subway > Walking 이고 환승 은 n번 평균을 기준으로 뭔가 추가하자
-//
-//    리턴값은 MBTI와
-//    Mbti는 walking 29.99로하고 큰순서대로 반환
-//    Walking은 14000 고정에
-//            Subway = 14000  * 30 / subway
-//    환승 = 14000 / ( 2 * 환승횟수)  = 7000 / 환승 횟수
-//
-//    Ex)
-//    {
-//        Mbti : BSW;
-//
-//        Walking : 14000 기준
-//        Subway: 7000
-//        Bus : 28000
-//    }
-
     public SurveyResultResponseDTO makeResult(SurveyResultRequestDTO surveyResultRequestDTO) {
-        surveyResultRequestDTO.getSelectedOption().get(0);
+        int walkingCost = 14000;
 
+        int busCost = walkingCost*30 / surveyResultRequestDTO.getBus();
+        int subwayCost = walkingCost*30 / surveyResultRequestDTO.getSubway();
+        int transferCost = walkingCost / 2 / surveyResultRequestDTO.getTransfer();
 
+        SurveyResultResponseDTO surveyResultResponseDTO = new SurveyResultResponseDTO();
+        surveyResultResponseDTO.setWalkingCost(walkingCost);
+        surveyResultResponseDTO.setBusCost(busCost);
+        surveyResultResponseDTO.setSubwayCost(subwayCost);
+        surveyResultResponseDTO.setTransferCost(transferCost);
 
-        return null;
+        walkingCost = 14000 + 1; // 동일한 14000의 다른 대중교통보다 선택이안됫으므로 비용이높음
+
+        String mbti = makeMbti(walkingCost, busCost, subwayCost);
+        String mbtiDescription = mbtiDescriptionManager.getDescription(mbti);
+
+        surveyResultResponseDTO.setMbti(mbti);
+        surveyResultResponseDTO.setMbtiDescription(mbtiDescription);
+
+        return surveyResultResponseDTO;
+    }
+
+    private String makeMbti( int walkingCost, int busCost, int subwayCost) {
+
+        // HashMap으로 교통수단과 비용 관리
+        Map<String, Integer> costMap = new HashMap<>();
+        costMap.put("B", busCost);
+        costMap.put("S", subwayCost);
+        costMap.put("W", walkingCost);
+
+        // HashMap을 스트림으로 정렬하고 결과 문자열 생성
+        String modeSequence = costMap.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .collect(Collectors.joining());
+
+        return modeSequence;
     }
 }

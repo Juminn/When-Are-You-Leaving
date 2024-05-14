@@ -55,7 +55,7 @@ public class CalculatorServiceImpl implements CalculatorService {
 
             //memberTransportCostDTO = memberService.getMemberTransportCost("65f2a9c5-00c7-4c59-9b23-f984c3b50418");
 
-            MemberTransportCostDTO memberTransportCostDTO = new MemberTransportCostDTO(scheduleDTO.getOpportunityCost(), scheduleDTO.getWalkingCost(), scheduleDTO.getBusCost(), scheduleDTO.getSubwayCost());
+            MemberTransportCostDTO memberTransportCostDTO = new MemberTransportCostDTO(scheduleDTO.getWalkingCost(),scheduleDTO.getBusCost(),  scheduleDTO.getSubwayCost(),  scheduleDTO.getTransferCost());
 
             System.out.println("mytest: " + memberTransportCostDTO);
 
@@ -126,16 +126,20 @@ public class CalculatorServiceImpl implements CalculatorService {
         int cost = 0;
 
         cost += path.getDuration(Transportation.SUBWAY) * memberTransportCostDTO.subway / 60;
+        //System.out.println("mytest cost: "  + cost);
         cost += (path.getDuration(Transportation.WALKING) + path.getWaitingDuration()) * memberTransportCostDTO.walking / 60;
+        //System.out.println("mytest cost: "  + cost);
         cost += path.getDuration(Transportation.BUS) * memberTransportCostDTO.bus / 60;
-        cost += ( path.getTransferCount() + 1 ) * 5 * memberTransportCostDTO.getOpportunityCost() / 60;
+        //System.out.println("mytest cost: "  + cost);
+        cost +=path.getTransferCount() * memberTransportCostDTO.getTransferCost();
+        //System.out.println("mytest cost: "  + cost);
 
         if(cost==37700){
             System.out.println("test: " + path.getDuration(Transportation.SUBWAY));
             System.out.println(path.getDuration(Transportation.WALKING));
             System.out.println(path.getWaitingDuration());
             System.out.println(path.getDuration(Transportation.BUS));
-            System.out.println(( path.getTransferCount() + 1 ) * 15 * memberTransportCostDTO.getOpportunityCost() / 60);
+            System.out.println(( path.getTransferCount() + 1 ) * 15 * memberTransportCostDTO.getTransferCost() / 60);
         }
 
         pathAndCost.setPath(path);
