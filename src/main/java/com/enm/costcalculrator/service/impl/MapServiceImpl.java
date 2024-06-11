@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -69,7 +70,7 @@ public class MapServiceImpl implements MapService {
     }
 
     @Override
-    public ArrayList<Path> getPathFromNaverMapAPI(PathRequestDTO pathRequestDTO){
+    public Mono<ArrayList<Path>> getPathFromNaverMapAPI(PathRequestDTO pathRequestDTO){
 
         WebClient webClient = WebClient.builder()
                 .baseUrl("https://map.naver.com")
@@ -88,8 +89,7 @@ public class MapServiceImpl implements MapService {
                 .queryParam("departureTime", pathRequestDTO.getDepartureTime())
                 .toUriString();
         System.out.println("Request URL: " + uriString);
-        System.out.println("start time:  " + LocalDateTime.now());
-        ResponseEntity<PathResponseDTO> test = webClient.get()
+        Mono<ArrayList<Path>> test = webClient.get()
                 .uri(uriBuilder -> uriBuilder.path("/p/api/directions/pubtrans")
                         .queryParam("start", pathRequestDTO.getStart())
                         .queryParam("goal", pathRequestDTO.getGoal())
@@ -101,8 +101,10 @@ public class MapServiceImpl implements MapService {
                         .build())
                 .retrieve()
                 .toEntity(PathResponseDTO.class)
-                .block();
-        System.out.println("end time:  " + LocalDateTime.now());
+                .map(responseEntity -> {
+                    System.out.println("naverMapApI endTime: " + LocalDateTime.now());
+                    return responseEntity.getBody().getPaths();
+                });
 
 //        ResponseEntity<RouteResponseDTO> test = webClient.get()
 //                .uri(uriBuilder -> uriBuilder.path("/p/api/directions/pubtrans")
@@ -114,8 +116,7 @@ public class MapServiceImpl implements MapService {
 //
 //        test.getBody().getPaths();
 
-
-        return test.getBody().getPaths();
+        return test;
     }
 
 }
