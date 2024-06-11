@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 @Service
@@ -87,7 +88,7 @@ public class MapServiceImpl implements MapService {
                 .queryParam("departureTime", pathRequestDTO.getDepartureTime())
                 .toUriString();
         System.out.println("Request URL: " + uriString);
-
+        System.out.println("start time:  " + LocalDateTime.now());
         ResponseEntity<PathResponseDTO> test = webClient.get()
                 .uri(uriBuilder -> uriBuilder.path("/p/api/directions/pubtrans")
                         .queryParam("start", pathRequestDTO.getStart())
@@ -101,7 +102,7 @@ public class MapServiceImpl implements MapService {
                 .retrieve()
                 .toEntity(PathResponseDTO.class)
                 .block();
-
+        System.out.println("end time:  " + LocalDateTime.now());
 
 //        ResponseEntity<RouteResponseDTO> test = webClient.get()
 //                .uri(uriBuilder -> uriBuilder.path("/p/api/directions/pubtrans")

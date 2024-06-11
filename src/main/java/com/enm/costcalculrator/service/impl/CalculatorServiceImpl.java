@@ -36,13 +36,15 @@ public class CalculatorServiceImpl implements CalculatorService {
     //도착시간 설정알고리즘에서는 도착시간을 체크하고 DTO를 생성해야함. 아예새로만들어야하나?
     public PathAndCostAndAnalysisDTO calculate(ScheduleDTO scheduleDTO){
 
-        //while 문으로 paths.startTime~endTime 까지 이때 시간주기 알고리즘은 나중에생각하고 일단은 10분단위로 해보고 1분단위로 수정하기
+        //while 문으로 paths.startTime~endTime 까지 이때 시간주기 알고리즘은 나중에생각하고 일단은 10분단위로 해보고 1분단위로 수정하기\
+        System.out.println("cal start time:  " + LocalDateTime.now());
         ArrayList<PathAndCostAndAnalysisDTO> pathAndCostAndAnalysisDTOS = new ArrayList<>();
         LocalDateTime targetTime = LocalDateTime.parse(scheduleDTO.getStartTime());
         LocalDateTime endTime = LocalDateTime.parse(scheduleDTO.getEndTime());
 
         targetTime = targetTime.minusMinutes(10);
         while(targetTime.plusMinutes(10).isBefore(endTime)) {
+            System.out.println("while onething start time:  " + LocalDateTime.now());
             targetTime = targetTime.plusMinutes(10);
             PathRequestDTO pathRequestDTO = makeRouteRequestDTO(scheduleDTO, targetTime);
 
@@ -53,7 +55,7 @@ public class CalculatorServiceImpl implements CalculatorService {
 
             //memberTransportCostDTO = memberService.getMemberTransportCost("65f2a9c5-00c7-4c59-9b23-f984c3b50418");
 
-            MemberTransportCostDTO memberTransportCostDTO = new MemberTransportCostDTO(scheduleDTO.getOpportunityCost(), scheduleDTO.getWalkingCost(), scheduleDTO.getBusCost(), scheduleDTO.getSubwayCost());
+            MemberTransportCostDTO memberTransportCostDTO = new MemberTransportCostDTO(scheduleDTO.getWalkingCost(),scheduleDTO.getBusCost(),  scheduleDTO.getSubwayCost(),  scheduleDTO.getTransferCost());
 
             System.out.println("mytest: " + memberTransportCostDTO);
 
@@ -73,7 +75,7 @@ public class CalculatorServiceImpl implements CalculatorService {
             setMinCostAndIndexOfPaths(pathAndCostAndAnalysisDTO);
             pathAndCostAndAnalysisDTOS.add(pathAndCostAndAnalysisDTO);
 
-            System.out.println(pathAndCostAndAnalysisDTO.getMinCost());
+            System.out.println("while onething end time:  " + LocalDateTime.now());
         }
         //while문 끝나고 DTOS에서 최솟값찾고 그 DTO반환
 
@@ -83,6 +85,7 @@ public class CalculatorServiceImpl implements CalculatorService {
         }
 
         //pathAndCostAndAnalysisDTOS.get(0).getPathAndCosts().get(0).getPath().makeSubDuration();
+        System.out.println("cal start time:  " + LocalDateTime.now());
 
         return searchMinDTO(pathAndCostAndAnalysisDTOS);
     }
@@ -123,16 +126,20 @@ public class CalculatorServiceImpl implements CalculatorService {
         int cost = 0;
 
         cost += path.getDuration(Transportation.SUBWAY) * memberTransportCostDTO.subway / 60;
+        //System.out.println("mytest cost: "  + cost);
         cost += (path.getDuration(Transportation.WALKING) + path.getWaitingDuration()) * memberTransportCostDTO.walking / 60;
+        //System.out.println("mytest cost: "  + cost);
         cost += path.getDuration(Transportation.BUS) * memberTransportCostDTO.bus / 60;
-        cost += ( path.getTransferCount() + 1 ) * 5 * memberTransportCostDTO.getOpportunityCost() / 60;
+        //System.out.println("mytest cost: "  + cost);
+        cost +=path.getTransferCount() * memberTransportCostDTO.getTransferCost();
+        //System.out.println("mytest cost: "  + cost);
 
         if(cost==37700){
             System.out.println("test: " + path.getDuration(Transportation.SUBWAY));
             System.out.println(path.getDuration(Transportation.WALKING));
             System.out.println(path.getWaitingDuration());
             System.out.println(path.getDuration(Transportation.BUS));
-            System.out.println(( path.getTransferCount() + 1 ) * 15 * memberTransportCostDTO.getOpportunityCost() / 60);
+            System.out.println(( path.getTransferCount() + 1 ) * 15 * memberTransportCostDTO.getTransferCost() / 60);
         }
 
         pathAndCost.setPath(path);
