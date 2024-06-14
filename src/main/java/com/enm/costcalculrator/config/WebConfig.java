@@ -1,8 +1,14 @@
 package com.enm.costcalculrator.config;
 
+import io.github.resilience4j.ratelimiter.RateLimiter;
+import io.github.resilience4j.ratelimiter.RateLimiterConfig;
+import io.github.resilience4j.ratelimiter.RateLimiterRegistry;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
         import org.springframework.web.servlet.config.annotation.CorsRegistry;
         import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.time.Duration;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -29,5 +35,17 @@ public class WebConfig implements WebMvcConfigurer {
                         "https://www.xn--w39a06bmycv8qzokvne.com",
                         "http://www.xn--w39a06bmycv8qzokvne.com"
                 );
+    }
+
+    @Bean
+    public RateLimiter rateLimiter() {
+        RateLimiterConfig config = RateLimiterConfig.custom()
+                .limitForPeriod(1) // 초당 최대 요청 수
+                .limitRefreshPeriod(Duration.ofSeconds(1)) // 리프레시 주기
+                .timeoutDuration(Duration.ofMillis(10000)) // 요청 타임아웃 기간
+                .build();
+
+        RateLimiterRegistry registry = RateLimiterRegistry.of(config);
+        return registry.rateLimiter("naverMapRateLimiter");
     }
 }

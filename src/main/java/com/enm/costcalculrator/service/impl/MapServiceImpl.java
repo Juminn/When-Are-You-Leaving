@@ -4,6 +4,9 @@ import com.enm.costcalculrator.data.dto.Path;
 import com.enm.costcalculrator.data.dto.PathRequestDTO;
 import com.enm.costcalculrator.data.dto.PathResponseDTO;
 import com.enm.costcalculrator.service.MapService;
+import io.github.resilience4j.ratelimiter.RateLimiter;
+import io.github.resilience4j.reactor.ratelimiter.operator.RateLimiterOperator;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -12,6 +15,14 @@ import java.util.ArrayList;
 
 @Service
 public class MapServiceImpl implements MapService {
+
+    private final RateLimiter rateLimiter;
+
+    @Autowired
+    public MapServiceImpl(RateLimiter rateLimiter) {
+        this.rateLimiter = rateLimiter;
+    }
+
     @Override
     public String tmapTest() {
 
@@ -114,13 +125,13 @@ public class MapServiceImpl implements MapService {
                     //System.out.println("naverMapApI endTime: " + LocalDateTime.now());
 
                     if(responseEntity.getBody() == null){
-                        return new ArrayList<>();
+                        return new ArrayList<Path>();
                     }
                     else {
                         return responseEntity.getBody().getPaths();
                     }
-                });
-
+                })
+                .transformDeferred(RateLimiterOperator.of(rateLimiter)); // 레이트 리미터 적용;
 
     }
 
