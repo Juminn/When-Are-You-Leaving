@@ -3,7 +3,7 @@ ADD build/libs/costCalculrator-0.0.1-SNAPSHOT.jar costCalculrator-0.0.1-SNAPSHOT
 EXPOSE  8080
 
 # 환경 변수로 Java 옵션 설정
-ENV JAVA_OPTS="-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/heap_dumps/heapdump.hprof"
+ENV JAVA_OPTS="-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/heap_dumps"
 
 # 엔트리 포인트에 환경 변수 추가
 RUN mkdir -p /heap_dumps
