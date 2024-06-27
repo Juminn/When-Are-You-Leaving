@@ -25,7 +25,7 @@ public class CalculatorServiceImpl implements CalculatorService {
         this.memberService = memberService;
     }
 
-    //스케쥴DTO를 기반으로 시간주기 만들어주는 함수만드는게좋을듯?
+    //스케쥴DTO를 기반으로 시간주기 만들어주는 함수만드는게좋을듯
 
 
 
