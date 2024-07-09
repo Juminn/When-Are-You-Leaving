@@ -4,16 +4,25 @@ import com.enm.costcalculrator.data.dto.Path;
 import com.enm.costcalculrator.data.dto.PathRequestDTO;
 import com.enm.costcalculrator.data.dto.PathResponseDTO;
 import com.enm.costcalculrator.service.MapService;
-import org.springframework.http.ResponseEntity;
+import io.github.resilience4j.ratelimiter.RateLimiter;
+import io.github.resilience4j.reactor.ratelimiter.operator.RateLimiterOperator;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.util.UriComponentsBuilder;
+import reactor.core.publisher.Mono;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 @Service
 public class MapServiceImpl implements MapService {
+
+    private final RateLimiter rateLimiter;
+
+    @Autowired
+    public MapServiceImpl(RateLimiter rateLimiter) {
+        this.rateLimiter = rateLimiter;
+    }
+
     @Override
     public String tmapTest() {
 
@@ -69,7 +78,7 @@ public class MapServiceImpl implements MapService {
     }
 
     @Override
-    public ArrayList<Path> getPathFromNaverMapAPI(PathRequestDTO pathRequestDTO){
+    public Mono<ArrayList<Path>> getPathFromNaverMapAPI(PathRequestDTO pathRequestDTO){
 
         WebClient webClient = WebClient.builder()
                 .baseUrl("https://map.naver.com")
@@ -77,32 +86,18 @@ public class MapServiceImpl implements MapService {
                 .build();
 
         // URL 로그출력
-        String uriString = UriComponentsBuilder.fromUriString("https://map.naver.com")
-                .path("/p/api/directions/pubtrans")
-                .queryParam("start", pathRequestDTO.getStart())
-                .queryParam("goal", pathRequestDTO.getGoal())
-                .queryParam("crs", "EPSG:4326")
-                .queryParam("includeDetailOperation", "true")
-                .queryParam("lang", "ko")
-                .queryParam("mode", "TIME")
-                .queryParam("departureTime", pathRequestDTO.getDepartureTime())
-                .toUriString();
-        System.out.println("Request URL: " + uriString);
-        System.out.println("start time:  " + LocalDateTime.now());
-        ResponseEntity<PathResponseDTO> test = webClient.get()
-                .uri(uriBuilder -> uriBuilder.path("/p/api/directions/pubtrans")
-                        .queryParam("start", pathRequestDTO.getStart())
-                        .queryParam("goal", pathRequestDTO.getGoal())
-                        .queryParam("crs", "EPSG:4326")
-                        .queryParam("includeDetailOperation", "true")
-                        .queryParam("lang", "ko")
-                        .queryParam("mode", "TIME")
-                        .queryParam("departureTime", pathRequestDTO.getDepartureTime())
-                        .build())
-                .retrieve()
-                .toEntity(PathResponseDTO.class)
-                .block();
-        System.out.println("end time:  " + LocalDateTime.now());
+//        String uriString = UriComponentsBuilder.fromUriString("https://map.naver.com")
+//                .path("/p/api/directions/pubtrans")
+//                .queryParam("start", pathRequestDTO.getStart())
+//                .queryParam("goal", pathRequestDTO.getGoal())
+//                .queryParam("crs", "EPSG:4326")
+//                .queryParam("includeDetailOperation", "true")
+//                .queryParam("lang", "ko")
+//                .queryParam("mode", "TIME")
+//                .queryParam("departureTime", pathRequestDTO.getDepartureTime())
+//                .toUriString();
+//        System.out.println("Request URL: " + uriString);
+
 
 //        ResponseEntity<RouteResponseDTO> test = webClient.get()
 //                .uri(uriBuilder -> uriBuilder.path("/p/api/directions/pubtrans")
@@ -114,8 +109,30 @@ public class MapServiceImpl implements MapService {
 //
 //        test.getBody().getPaths();
 
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder.path("/p/api/directions/pubtrans")
+                        .queryParam("start", pathRequestDTO.getStart())
+                        .queryParam("goal", pathRequestDTO.getGoal())
+                        .queryParam("crs", "EPSG:4326")
+                        .queryParam("includeDetailOperation", "true")
+                        .queryParam("lang", "ko")
+                        .queryParam("mode", "TIME")
+                        .queryParam("departureTime", pathRequestDTO.getDepartureTime())
+                        .build())
+                .retrieve()
+                .toEntity(PathResponseDTO.class)
+                .map(responseEntity -> {
+                    //System.out.println("naverMapApI endTime: " + LocalDateTime.now());
 
-        return test.getBody().getPaths();
+                    if(responseEntity.getBody() == null){
+                        return new ArrayList<Path>();
+                    }
+                    else {
+                        return responseEntity.getBody().getPaths();
+                    }
+                })
+                .transformDeferred(RateLimiterOperator.of(rateLimiter)); // 레이트 리미터 적용;
+
     }
 
 }

@@ -10,8 +10,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
 
 @Service
 public class CalculatorServiceImpl implements CalculatorService {
@@ -25,7 +27,7 @@ public class CalculatorServiceImpl implements CalculatorService {
         this.memberService = memberService;
     }
 
-    //스케쥴DTO를 기반으로 시간주기 만들어주는 함수만드는게좋을듯?
+    //스케쥴DTO를 기반으로 시간주기 만들어주는 함수만드는게좋을듯
 
 
 
@@ -33,51 +35,62 @@ public class CalculatorServiceImpl implements CalculatorService {
     //현재는 출발시간기준 시간범위에서 1분단위로 계산.
     //해야할사항 n분단위는 파라미터로입력받자
     //시간범위를 설정해서 보내자?
-    //도착시간 설정알고리즘에서는 도착시간을 체크하고 DTO를 생성해야함. 아예새로만들어야하나?
+    //도착시간 설정알고리즘에서는 도착시간을 체크하고 DTO를 생성해야함. 아예새로만들어야하나
     public PathAndCostAndAnalysisDTO calculate(ScheduleDTO scheduleDTO){
 
         //while 문으로 paths.startTime~endTime 까지 이때 시간주기 알고리즘은 나중에생각하고 일단은 10분단위로 해보고 1분단위로 수정하기\
-        System.out.println("cal start time:  " + LocalDateTime.now());
         ArrayList<PathAndCostAndAnalysisDTO> pathAndCostAndAnalysisDTOS = new ArrayList<>();
         LocalDateTime targetTime = LocalDateTime.parse(scheduleDTO.getStartTime());
         LocalDateTime endTime = LocalDateTime.parse(scheduleDTO.getEndTime());
 
+        // 현재 targetTime부터 endTime까지의 간격을 계산
+        long intervalCount = Duration.between(targetTime, endTime).toMinutes() / 10 + 1;
+        CountDownLatch latch = new CountDownLatch((int) intervalCount);
+
         targetTime = targetTime.minusMinutes(10);
-        while(targetTime.plusMinutes(10).isBefore(endTime)) {
-            System.out.println("while onething start time:  " + LocalDateTime.now());
+        while(!targetTime.plusMinutes(10).isAfter(endTime)) {
             targetTime = targetTime.plusMinutes(10);
             PathRequestDTO pathRequestDTO = makeRouteRequestDTO(scheduleDTO, targetTime);
 
-            ArrayList<Path> paths = mapService.getPathFromNaverMapAPI(pathRequestDTO);
-            if(paths.size() == 0){
-                continue;
-            }
+            //ArrayList<Path> paths = mapService.getPathFromNaverMapAPI(pathRequestDTO);
+            //그렇다면 업무를 최소화
+            mapService.getPathFromNaverMapAPI(pathRequestDTO)
+                    .subscribe(paths -> {
+                        if(paths.size() == 0){
+                            latch.countDown();
+                            return;
+                        }
 
-            //memberTransportCostDTO = memberService.getMemberTransportCost("65f2a9c5-00c7-4c59-9b23-f984c3b50418");
+                        //memberTransportCostDTO = memberService.getMemberTransportCost("65f2a9c5-00c7-4c59-9b23-f984c3b50418");
+                        MemberTransportCostDTO memberTransportCostDTO = new MemberTransportCostDTO(scheduleDTO.getWalkingCost(),scheduleDTO.getBusCost(),  scheduleDTO.getSubwayCost(),  scheduleDTO.getTransferCost());
 
-            MemberTransportCostDTO memberTransportCostDTO = new MemberTransportCostDTO(scheduleDTO.getWalkingCost(),scheduleDTO.getBusCost(),  scheduleDTO.getSubwayCost(),  scheduleDTO.getTransferCost());
+                        //example Path and Cost AnalysisDTO identity
+                        PathAndCostAndAnalysisDTO pathAndCostAndAnalysisDTO = new PathAndCostAndAnalysisDTO();
+                        ArrayList<PathAndCost> pathAndCosts = new ArrayList<PathAndCost>();
+                        pathAndCostAndAnalysisDTO.setPathAndCosts(pathAndCosts);
 
-            System.out.println("mytest: " + memberTransportCostDTO);
+                        //경로별 비용계산
+                        for (Path path : paths) {
+                            PathAndCost pathAndCost = makePathAndCost(path, memberTransportCostDTO);
+                            pathAndCosts.add(pathAndCost);
 
-            //example Path and Cost AnalysisDTO identity
-            PathAndCostAndAnalysisDTO pathAndCostAndAnalysisDTO = new PathAndCostAndAnalysisDTO();
-            ArrayList<PathAndCost> pathAndCosts = new ArrayList<PathAndCost>();
-            pathAndCostAndAnalysisDTO.setPathAndCosts(pathAndCosts);
+                        }
 
-            //경로별 비용계산
-            for (Path path : paths) {
-                PathAndCost pathAndCost = makePathAndCost(path, memberTransportCostDTO);
-                pathAndCosts.add(pathAndCost);
+                        //모든 경로에서 최소비용과 번호 세팅
+                        setMinCostAndIndexOfPaths(pathAndCostAndAnalysisDTO);
+                        pathAndCostAndAnalysisDTOS.add(pathAndCostAndAnalysisDTO);
 
-            }
-
-            //모든 경로에서 최소비용과 번호 세팅
-            setMinCostAndIndexOfPaths(pathAndCostAndAnalysisDTO);
-            pathAndCostAndAnalysisDTOS.add(pathAndCostAndAnalysisDTO);
-
-            System.out.println("while onething end time:  " + LocalDateTime.now());
+                        latch.countDown();
+                    });
         }
         //while문 끝나고 DTOS에서 최솟값찾고 그 DTO반환
+        try {
+            latch.await();  // 모든 subscribe 호출이 완료될 때까지 대기
+            System.out.println("All intervals processed. Proceeding with result aggregation.");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Calculation interrupted.");
+        }
 
         //System.out.println(pathAndCostAndAnalysisDTOS);
         if (pathAndCostAndAnalysisDTOS.isEmpty()) {
@@ -133,14 +146,6 @@ public class CalculatorServiceImpl implements CalculatorService {
         //System.out.println("mytest cost: "  + cost);
         cost +=path.getTransferCount() * memberTransportCostDTO.getTransferCost();
         //System.out.println("mytest cost: "  + cost);
-
-        if(cost==37700){
-            System.out.println("test: " + path.getDuration(Transportation.SUBWAY));
-            System.out.println(path.getDuration(Transportation.WALKING));
-            System.out.println(path.getWaitingDuration());
-            System.out.println(path.getDuration(Transportation.BUS));
-            System.out.println(( path.getTransferCount() + 1 ) * 15 * memberTransportCostDTO.getTransferCost() / 60);
-        }
 
         pathAndCost.setPath(path);
         pathAndCost.setCost(cost);
