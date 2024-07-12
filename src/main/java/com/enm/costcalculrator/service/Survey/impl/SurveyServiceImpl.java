@@ -18,8 +18,6 @@ public class SurveyServiceImpl implements SurveyService {
     final int TRANSPORT_DURATION_INITIAL = 30;
     final int TRANSFER_NUM_INITIAL = 2;
 
-    final int transportDurationChange = 5;
-    final int transperDuraitonChange = 1;
     final int TRANSPORT_DURATION_MIN = 5;
     final int TRANSFER_NUM_INITIAL_MIN = 1;
 
