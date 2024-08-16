@@ -12,13 +12,14 @@ public class Path {
     private String departureTime;
     private String arrivalTime;
     private ArrayList<Leg> legs;
+    private int duration;
     private int waitingDuration;
     private int transferCount;
 
 
     //알고리즘 최적화 할수있음. - make 형식으로 각 타입별 소요시간을 필드로 만들자?
     //get Duration
-    public int getDuration(Transportation transportation){
+    public int getTransportDuration(Transportation transportation){
 
         int totalDuration = 0;
         Leg leg = legs.get(0);
