@@ -82,6 +82,7 @@ public class MapServiceImpl implements MapService {
 
         WebClient webClient = WebClient.builder()
                 .baseUrl("https://map.naver.com")
+                .defaultHeader("Referer", "https://map.naver.com/p/directions/14149906.4245121,4509840.9725981,%EC%84%9C%EC%9A%B8%20%EC%86%A1%ED%8C%8C%EA%B5%AC%20%EB%B0%B1%EC%A0%9C%EA%B3%A0%EB%B6%84%EB%A1%9C42%EA%B8%B8%2013,,SIMPLE_POI/14138767.3237372,4506020.1451819,%EC%84%9C%EC%9A%B8%20%EC%84%9C%EC%B4%88%EA%B5%AC%20%EC%84%9C%EC%B4%88%EB%8F%99%20%EC%82%B0144-4,,SIMPLE_POI/-/transit?c=10.07,0,0,0,dh")
                 .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(-1))
                 .build();
 
