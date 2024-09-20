@@ -138,11 +138,11 @@ public class CalculatorServiceImpl implements CalculatorService {
         PathAndCost pathAndCost = new PathAndCost();
         int cost = 0;
 
-        cost += path.getDuration(Transportation.SUBWAY) * memberTransportCostDTO.subway / 60;
+        cost += path.getTransportDuration(Transportation.SUBWAY) * memberTransportCostDTO.subway / 60;
         //System.out.println("mytest cost: "  + cost);
-        cost += (path.getDuration(Transportation.WALKING) + path.getWaitingDuration()) * memberTransportCostDTO.walking / 60;
+        cost += (path.getTransportDuration(Transportation.WALKING) + path.getWaitingDuration()) * memberTransportCostDTO.walking / 60;
         //System.out.println("mytest cost: "  + cost);
-        cost += path.getDuration(Transportation.BUS) * memberTransportCostDTO.bus / 60;
+        cost += path.getTransportDuration(Transportation.BUS) * memberTransportCostDTO.bus / 60;
         //System.out.println("mytest cost: "  + cost);
         cost +=path.getTransferCount() * memberTransportCostDTO.getTransferCost();
         //System.out.println("mytest cost: "  + cost);
@@ -159,17 +159,21 @@ public class CalculatorServiceImpl implements CalculatorService {
 
         int minCostIndex = 0;
         int minCost = pathAndCosts.get(minCostIndex).getCost();
+        int minDuraiton = pathAndCosts.get(minCostIndex).getPath().getDuration();
         for(int i=1; i<pathAndCosts.size(); i++){
             int targetIndex = i;
             int targetCost = pathAndCosts.get(targetIndex).getCost();
+            int targetDuration = pathAndCosts.get(targetIndex).getPath().getDuration();
 
             if(targetCost < minCost){
                 minCostIndex = targetIndex;
                 minCost = targetCost;
+                minDuraiton = targetDuration;
             }
         }
 
         pathAndCostAndAnalysisDTO.setMinCostIndex(minCostIndex);
         pathAndCostAndAnalysisDTO.setMinCost(minCost);
+        pathAndCostAndAnalysisDTO.setMinDuration(minDuraiton);
     }
 }

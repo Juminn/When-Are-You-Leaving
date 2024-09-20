@@ -9,6 +9,7 @@ import java.util.ArrayList;
 public class PathAndCostAndAnalysisDTO {
     int minCostIndex;
     int minCost;
+    int minDuration;
     ArrayList<PathAndCost> PathAndCosts;
 
 }
