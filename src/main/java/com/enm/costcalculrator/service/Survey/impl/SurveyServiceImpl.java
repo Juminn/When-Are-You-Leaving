@@ -15,11 +15,14 @@ public class SurveyServiceImpl implements SurveyService {
     @Autowired
     private MbtiDescriptionManager mbtiDescriptionManager;
 
-    final int initTrasnPortDuration = 30;
-    final int initTransferNum = 2;
+    final int TRANSPORT_DURATION_INITIAL = 30;
+    final int TRANSFER_NUM_INITIAL = 2;
 
-    final int transportDurationChange = 5;
-    final int transperDuraitonChange = 1;
+    final int TRANSPORT_DURATION_MIN = 5;
+    final int TRANSFER_NUM_INITIAL_MIN = 1;
+
+    final int TRANSPORT_DURATION_CHANGE_UNIT = 5;
+    final int TRANSFER_NUM_CHANGE_UNIT = 1;
 
 
     public SurveyResponseDTO makeNextQuestion(SurveyRequestDTO surveyRequestDTO) {
@@ -30,18 +33,29 @@ public class SurveyServiceImpl implements SurveyService {
         }
 
         int nowSelectedOption = surveyRequestDTO.getSelectedOption();
-        if(isFollowUpQuestion(surveyRequestDTO) && firstSelectedOption(surveyRequestDTO) != nowSelectedOption){
+        if (firstSelectedOption(surveyRequestDTO) != nowSelectedOption) {
             //return 다음질문
             return getNthQuestion(surveyRequestDTO.getQuestionIndex() + 1);
         }
-        else{
-            //return 추적질문
-            return FollowUpQuestion(surveyRequestDTO);
+
+        if (!isValidNextFollowUpQuestion(surveyRequestDTO)){
+            //return 다음질문
+            return getNthQuestion(surveyRequestDTO.getQuestionIndex() + 1);
         }
 
+        //return 추적질문
+        return FollowUpQuestion(surveyRequestDTO);
     }
 
+    //다음 추적질문이 유효할지 확인
+    private boolean isValidNextFollowUpQuestion(SurveyRequestDTO surveyRequestDTO) {
+        int durationMin = surveyRequestDTO.getTransportOfOption(1).equals("Transfer") ? TRANSFER_NUM_INITIAL_MIN : TRANSPORT_DURATION_MIN;
+        if(surveyRequestDTO.getDurationOfOption(1) <= durationMin){
+            return false;
+        }
 
+        return true;
+    }
 
 
     private boolean isFirstQuestion(SurveyRequestDTO surveyRequestDTO){
@@ -55,7 +69,7 @@ public class SurveyServiceImpl implements SurveyService {
     }
 
     private boolean isFollowUpQuestion(SurveyRequestDTO surveyRequestDTO){
-        if(surveyRequestDTO.getFollowUpQuestionIndex() != 0){
+        if (surveyRequestDTO.getFollowUpQuestionIndex() != 0) {
             return true;
         }
         else {
@@ -66,13 +80,15 @@ public class SurveyServiceImpl implements SurveyService {
     private int firstSelectedOption(SurveyRequestDTO surveyRequestDTO){
         int opt1Duration = surveyRequestDTO.getDurationOfOption(1);
 
-        int initDuraiton = surveyRequestDTO.getTransportOfOption(1).equals("Transfer") ? initTransferNum : initTrasnPortDuration;
+        int initDuraiton = surveyRequestDTO.getTransportOfOption(1).equals("Transfer") ? TRANSFER_NUM_INITIAL : TRANSPORT_DURATION_INITIAL;
 
 
         if(opt1Duration < initDuraiton){
             return 0;
         } else if (opt1Duration > initDuraiton) {
             return 1;
+        } else if (opt1Duration == initDuraiton) {
+            return surveyRequestDTO.getSelectedOption();
         }
         else {
             throw new RuntimeException();
@@ -82,22 +98,22 @@ public class SurveyServiceImpl implements SurveyService {
     private SurveyResponseDTO getNthQuestion(int n){
         if(n == 1) {
             List<OptionDTO> options = Arrays.asList(
-                    new OptionDTO("Walking", initTrasnPortDuration),
-                    new OptionDTO("Bus", initTrasnPortDuration)
+                    new OptionDTO("Walking", TRANSPORT_DURATION_INITIAL),
+                    new OptionDTO("Bus", TRANSPORT_DURATION_INITIAL)
             );
             return new SurveyResponseDTO(1, 0, options, false);
         }
         else if(n==2){
             List<OptionDTO> options = Arrays.asList(
-                    new OptionDTO("Walking", initTrasnPortDuration),
-                    new OptionDTO("Subway", initTrasnPortDuration)
+                    new OptionDTO("Walking", TRANSPORT_DURATION_INITIAL),
+                    new OptionDTO("Subway", TRANSPORT_DURATION_INITIAL)
             );
             return new SurveyResponseDTO(2, 0, options, false);
         }
         else if(n==3){
             List<OptionDTO> options = Arrays.asList(
-                    new OptionDTO("Walking", initTrasnPortDuration),
-                    new OptionDTO("Transfer", initTransferNum)
+                    new OptionDTO("Walking", TRANSPORT_DURATION_INITIAL),
+                    new OptionDTO("Transfer", TRANSFER_NUM_INITIAL)
             );
             return new SurveyResponseDTO(3, 0, options, false);
         }
@@ -113,7 +129,7 @@ public class SurveyServiceImpl implements SurveyService {
         //요청 시간 계산
         int Option1Duration;
 
-        int durationChange = surveyRequestDTO.getTransportOfOption(1).equals("Transfer") ? transperDuraitonChange : transportDurationChange;
+        int durationChange = surveyRequestDTO.getTransportOfOption(1).equals("Transfer") ? TRANSFER_NUM_CHANGE_UNIT : TRANSPORT_DURATION_CHANGE_UNIT;
 
         if(surveyRequestDTO.getSelectedOption()==0){
             Option1Duration = surveyRequestDTO.getDurationOfOption(1) - durationChange;
