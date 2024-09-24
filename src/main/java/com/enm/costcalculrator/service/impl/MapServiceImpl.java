@@ -9,6 +9,7 @@ import io.github.resilience4j.reactor.ratelimiter.operator.RateLimiterOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -128,6 +129,13 @@ public class MapServiceImpl implements MapService {
                         .queryParam("departureTime", pathRequestDTO.getDepartureTime())
                         .build())
                 .retrieve()
+                .onStatus(HttpStatus::isError, clientResponse -> {
+                    return clientResponse.bodyToMono(String.class)
+                    .flatMap(errorBody -> {
+                        //logger.error()
+                        return Mono.error(new RuntimeException("MAP API 에러: " + errorBody));
+                    });
+                })
                 .toEntity(PathResponseDTO.class)
                 .map(responseEntity -> {
                     //System.out.println("naverMapApI endTime: " + LocalDateTime.now());
@@ -139,7 +147,11 @@ public class MapServiceImpl implements MapService {
                         return responseEntity.getBody().getPaths();
                     }
                 })
-                .transformDeferred(RateLimiterOperator.of(rateLimiter)); // 레이트 리미터 적용;
+                .transformDeferred(RateLimiterOperator.of(rateLimiter)) // 레이트 리미터 적용;
+                .onErrorResume(throwable -> {
+                    //logger
+                    return Mono.error(new RuntimeException("MAP API 요청 중 내부 서버 에러: " + throwable));
+                });
 
     }
 

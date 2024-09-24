@@ -13,6 +13,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 
 @Service
@@ -43,6 +45,9 @@ public class CalculatorServiceImpl implements CalculatorService {
         LocalDateTime targetTime = LocalDateTime.parse(scheduleDTO.getStartTime());
         LocalDateTime endTime = LocalDateTime.parse(scheduleDTO.getEndTime());
 
+        //비동기 실해으로 동시에 접근할 수 도 있기 때문에
+        List<Throwable> errorList = new CopyOnWriteArrayList<>();
+
         // 현재 targetTime부터 endTime까지의 간격을 계산
         long intervalCount = Duration.between(targetTime, endTime).toMinutes() / 10 + 1;
         CountDownLatch latch = new CountDownLatch((int) intervalCount);
@@ -55,7 +60,8 @@ public class CalculatorServiceImpl implements CalculatorService {
             //ArrayList<Path> paths = mapService.getPathFromNaverMapAPI(pathRequestDTO);
             //그렇다면 업무를 최소화
             mapService.getPathFromNaverMapAPI(pathRequestDTO)
-                    .subscribe(paths -> {
+                .subscribe(
+                    paths -> {
                         if(paths.size() == 0){
                             latch.countDown();
                             return;
@@ -81,7 +87,13 @@ public class CalculatorServiceImpl implements CalculatorService {
                         pathAndCostAndAnalysisDTOS.add(pathAndCostAndAnalysisDTO);
 
                         latch.countDown();
-                    });
+                    },
+                    throwable -> {
+                        latch.countDown();
+                        //logger
+                        errorList.add(throwable);
+                    }
+                );
         }
         //while문 끝나고 DTOS에서 최솟값찾고 그 DTO반환
         try {
@@ -94,7 +106,13 @@ public class CalculatorServiceImpl implements CalculatorService {
 
         //System.out.println(pathAndCostAndAnalysisDTOS);
         if (pathAndCostAndAnalysisDTOS.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "대중교통 이용이 불가능한 시간입니다.");
+            System.out.println(errorList);
+            if(errorList.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "대중교통 이용이 불가능한 시간입니다.");
+            }
+            else {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "MAP API 사용중 에러가 발생 했습니다.");
+            }
         }
 
         //pathAndCostAndAnalysisDTOS.get(0).getPathAndCosts().get(0).getPath().makeSubDuration();
