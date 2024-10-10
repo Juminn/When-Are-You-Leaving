@@ -71,7 +71,7 @@ public class CalculatorServiceImpl implements CalculatorService {
             targetTime = targetTime.plusMinutes(10);
             PathRequestDTO pathRequestDTO = makeRouteRequestDTO(scheduleDTO, targetTime);
 
-            logger.info("mytest apicall from ", scheduleDTO, " calls: ", apiCallManager.getPendingApiCalls());
+            logger.info("mytest apicall from {}, calls: {}", scheduleDTO, apiCallManager.getPendingApiCalls());
 
             //ArrayList<Path> paths = mapService.getPathFromNaverMapAPI(pathRequestDTO);
             //그렇다면 업무를 최소화
