@@ -27,6 +27,7 @@ public class CalculatorServiceImpl implements CalculatorService {
     final MemberService memberService;
     private final ApiCallManager apiCallManager;
 
+    private int requestID = 0;
     private static final Logger logger = LoggerFactory.getLogger(MapServiceImpl.class);
     @Autowired
     public CalculatorServiceImpl(MapService mapService, MemberService memberService, ApiCallManager apiCallManager) {
@@ -45,6 +46,7 @@ public class CalculatorServiceImpl implements CalculatorService {
     //시간범위를 설정해서 보내자?
     //도착시간 설정알고리즘에서는 도착시간을 체크하고 DTO를 생성해야함. 아예새로만들어야하나
     public PathAndCostAndAnalysisDTO calculate(ScheduleDTO scheduleDTO){
+        requestID++;
 
         //while 문으로 paths.startTime~endTime 까지 이때 시간주기 알고리즘은 나중에생각하고 일단은 10분단위로 해보고 1분단위로 수정하기\
         ArrayList<PathAndCostAndAnalysisDTO> pathAndCostAndAnalysisDTOS = new ArrayList<>();
@@ -71,7 +73,7 @@ public class CalculatorServiceImpl implements CalculatorService {
             targetTime = targetTime.plusMinutes(10);
             PathRequestDTO pathRequestDTO = makeRouteRequestDTO(scheduleDTO, targetTime);
 
-            logger.info("mytest apicall from {}, calls: {}", scheduleDTO, apiCallManager.getPendingApiCalls());
+            logger.info("mytest apicallid: {}, calls: {}, from {}", requestID, apiCallManager.getPendingApiCalls(), scheduleDTO);
 
             //ArrayList<Path> paths = mapService.getPathFromNaverMapAPI(pathRequestDTO);
             //그렇다면 업무를 최소화
