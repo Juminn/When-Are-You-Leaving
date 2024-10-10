@@ -42,7 +42,7 @@ public class WebConfig implements WebMvcConfigurer {
         RateLimiterConfig config = RateLimiterConfig.custom()
                 .limitForPeriod(1) //
                 .limitRefreshPeriod(Duration.ofMillis(10000)) // 1회 요청주기 10초
-                .timeoutDuration(Duration.ofSeconds(1200)) // 요청 타임아웃 기간
+                .timeoutDuration(Duration.ofSeconds(600)) // 요청 타임아웃 기간
                 .build();
 
         RateLimiterRegistry registry = RateLimiterRegistry.of(config);

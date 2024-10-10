@@ -2,6 +2,7 @@ package com.enm.costcalculrator.service.impl;
 
 import com.enm.costcalculrator.data.dto.*;
 import com.enm.costcalculrator.data.enums.Transportation;
+import com.enm.costcalculrator.service.ApiCallManager;
 import com.enm.costcalculrator.service.CalculatorService;
 import com.enm.costcalculrator.service.MapService;
 import com.enm.costcalculrator.service.MemberService;
@@ -22,11 +23,13 @@ public class CalculatorServiceImpl implements CalculatorService {
 
     final MapService mapService;
     final MemberService memberService;
+    private final ApiCallManager apiCallManager;
 
     @Autowired
-    public CalculatorServiceImpl(MapService mapService, MemberService memberService) {
+    public CalculatorServiceImpl(MapService mapService, MemberService memberService, ApiCallManager apiCallManager) {
         this.mapService = mapService;
         this.memberService = memberService;
+        this.apiCallManager = apiCallManager;
     }
 
     //스케쥴DTO를 기반으로 시간주기 만들어주는 함수만드는게좋을듯
@@ -45,11 +48,19 @@ public class CalculatorServiceImpl implements CalculatorService {
         LocalDateTime targetTime = LocalDateTime.parse(scheduleDTO.getStartTime());
         LocalDateTime endTime = LocalDateTime.parse(scheduleDTO.getEndTime());
 
+        //10분내 결과 받을 수 있는지 체크
+        // 필요한 API 호출 수 계산
+        long intervalCount = Duration.between(targetTime, endTime).toMinutes() / 10 + 1;
+        int totalApiCallsNeeded = (int) intervalCount;
+        // 예상 대기 시간이 10분을 초과하는지 확인
+        if (apiCallManager.isExpectedWaitTimeExceedingLimit(totalApiCallsNeeded)) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "현재 서비스가 많이 사용 중입니다. 10분 뒤에 요청해 주세요.");
+        }
+
         //비동기 실해으로 동시에 접근할 수 도 있기 때문에
         List<Throwable> errorList = new CopyOnWriteArrayList<>();
 
         // 현재 targetTime부터 endTime까지의 간격을 계산
-        long intervalCount = Duration.between(targetTime, endTime).toMinutes() / 10 + 1;
         CountDownLatch latch = new CountDownLatch((int) intervalCount);
 
         targetTime = targetTime.minusMinutes(10);

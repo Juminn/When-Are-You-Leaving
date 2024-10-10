@@ -3,6 +3,7 @@ package com.enm.costcalculrator.service.impl;
 import com.enm.costcalculrator.data.dto.Path;
 import com.enm.costcalculrator.data.dto.PathRequestDTO;
 import com.enm.costcalculrator.data.dto.PathResponseDTO;
+import com.enm.costcalculrator.service.ApiCallManager;
 import com.enm.costcalculrator.service.MapService;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.reactor.ratelimiter.operator.RateLimiterOperator;
@@ -22,10 +23,12 @@ public class MapServiceImpl implements MapService {
 
     private static final Logger logger = LoggerFactory.getLogger(MapServiceImpl.class);
     private final RateLimiter rateLimiter;
+    private final ApiCallManager apiCallManager;
 
     @Autowired
-    public MapServiceImpl(RateLimiter rateLimiter) {
+    public MapServiceImpl(RateLimiter rateLimiter, ApiCallManager apiCallManager) {
         this.rateLimiter = rateLimiter;
+        this.apiCallManager = apiCallManager;
     }
 
     @Override
@@ -85,6 +88,9 @@ public class MapServiceImpl implements MapService {
     @Override
     public Mono<ArrayList<Path>> getPathFromNaverMapAPI(PathRequestDTO pathRequestDTO){
 
+        // API 호출 전에 카운터 증가
+        apiCallManager.incrementPendingApiCalls();
+
         WebClient webClient = WebClient.builder()
                 .baseUrl("https://map.naver.com")
                 .defaultHeader("Referer", "https://map.naver.com/p/directions/14149906.4245121,4509840.9725981,%EC%84%9C%EC%9A%B8%20%EC%86%A1%ED%8C%8C%EA%B5%AC%20%EB%B0%B1%EC%A0%9C%EA%B3%A0%EB%B6%84%EB%A1%9C42%EA%B8%B8%2013,,SIMPLE_POI/14138767.3237372,4506020.1451819,%EC%84%9C%EC%9A%B8%20%EC%84%9C%EC%B4%88%EA%B5%AC%20%EC%84%9C%EC%B4%88%EB%8F%99%20%EC%82%B0144-4,,SIMPLE_POI/-/transit?c=10.07,0,0,0,dh")
@@ -137,6 +143,10 @@ public class MapServiceImpl implements MapService {
                     });
                 })
                 .toEntity(PathResponseDTO.class)
+                .doFinally(signalType -> {
+                    // API 호출 완료 후 카운터 감소
+                    apiCallManager.decrementPendingApiCalls();
+                })
                 .map(responseEntity -> {
                     //System.out.println("naverMapApI endTime: " + LocalDateTime.now());
 
