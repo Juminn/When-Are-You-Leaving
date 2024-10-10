@@ -6,6 +6,8 @@ import com.enm.costcalculrator.service.ApiCallManager;
 import com.enm.costcalculrator.service.CalculatorService;
 import com.enm.costcalculrator.service.MapService;
 import com.enm.costcalculrator.service.MemberService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -25,6 +27,7 @@ public class CalculatorServiceImpl implements CalculatorService {
     final MemberService memberService;
     private final ApiCallManager apiCallManager;
 
+    private static final Logger logger = LoggerFactory.getLogger(MapServiceImpl.class);
     @Autowired
     public CalculatorServiceImpl(MapService mapService, MemberService memberService, ApiCallManager apiCallManager) {
         this.mapService = mapService;
@@ -67,6 +70,8 @@ public class CalculatorServiceImpl implements CalculatorService {
         while(!targetTime.plusMinutes(10).isAfter(endTime)) {
             targetTime = targetTime.plusMinutes(10);
             PathRequestDTO pathRequestDTO = makeRouteRequestDTO(scheduleDTO, targetTime);
+
+            logger.info("mytest apicall from ", scheduleDTO, " calls: ", apiCallManager.getPendingApiCalls());
 
             //ArrayList<Path> paths = mapService.getPathFromNaverMapAPI(pathRequestDTO);
             //그렇다면 업무를 최소화
