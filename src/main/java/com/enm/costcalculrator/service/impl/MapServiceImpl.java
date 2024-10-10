@@ -90,6 +90,7 @@ public class MapServiceImpl implements MapService {
 
         // API 호출 전에 카운터 증가
         apiCallManager.incrementPendingApiCalls();
+        logger.info("mytest apicalls: ", apiCallManager.getPendingApiCalls());
 
         WebClient webClient = WebClient.builder()
                 .baseUrl("https://map.naver.com")
