@@ -78,10 +78,6 @@ public class MapServiceImpl implements MapService {
                     });
                 })
                 .toEntity(PathResponseDTO.class)
-                .doFinally(signalType -> {
-                    // API 호출 완료 후 카운터 감소
-                    apiCallManager.decrementPendingApiCalls();
-                })
                 .map(responseEntity -> {
                     //System.out.println("naverMapApI endTime: " + LocalDateTime.now());
 
@@ -93,6 +89,10 @@ public class MapServiceImpl implements MapService {
                     }
                 })
                 .transformDeferred(RateLimiterOperator.of(rateLimiter)) // 레이트 리미터 적용;
+                .doFinally(signalType -> {
+                    // API 호출 완료 후 카운터 감소
+                    apiCallManager.decrementPendingApiCalls();
+                })
                 .onErrorResume(throwable -> {
                     //logger
                     return Mono.error(new RuntimeException("MAP API 요청 중 내부 서버 에러: " + throwable));
