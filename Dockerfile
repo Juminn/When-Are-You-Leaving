@@ -11,5 +11,5 @@ EXPOSE  8080
 #ENTRYPOINT java -jar /costCalculrator-0.0.1-SNAPSHOT.jar $JAVA_OPTS
 
 RUN mkdir -p /heap_dumps
-ENV JAVA_OPTS="-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/heap_dumps/heapdump.hprof -Xlog:gc*:file=/var/log/gc.log"
+ENV JAVA_OPTS="-Xms512m -Xmx512m -Xss512k -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/heap_dumps/heapdump.hprof -Xlog:gc*:file=/var/log/gc.log"
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /costCalculrator-0.0.1-SNAPSHOT.jar"]
