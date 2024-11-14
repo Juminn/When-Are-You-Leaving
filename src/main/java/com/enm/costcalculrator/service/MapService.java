@@ -9,10 +9,6 @@ import java.util.ArrayList;
 
 public interface MapService {
 
-    public String tmapTest();
-
-
-
-    public Mono<ArrayList<Path>> getPathFromNaverMapAPI(PathRequestDTO scheduleDTO);
+        public Mono<ArrayList<Path>> getPathFromNaverMapAPI(PathRequestDTO scheduleDTO);
 }
 

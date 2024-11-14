@@ -2,9 +2,12 @@ package com.enm.costcalculrator.service.impl;
 
 import com.enm.costcalculrator.data.dto.*;
 import com.enm.costcalculrator.data.enums.Transportation;
+import com.enm.costcalculrator.service.ApiCallManager;
 import com.enm.costcalculrator.service.CalculatorService;
 import com.enm.costcalculrator.service.MapService;
 import com.enm.costcalculrator.service.MemberService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -13,6 +16,8 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 
 @Service
@@ -20,11 +25,15 @@ public class CalculatorServiceImpl implements CalculatorService {
 
     final MapService mapService;
     final MemberService memberService;
+    private final ApiCallManager apiCallManager;
 
+    private int requestID = 0;
+    private static final Logger logger = LoggerFactory.getLogger(MapServiceImpl.class);
     @Autowired
-    public CalculatorServiceImpl(MapService mapService, MemberService memberService) {
+    public CalculatorServiceImpl(MapService mapService, MemberService memberService, ApiCallManager apiCallManager) {
         this.mapService = mapService;
         this.memberService = memberService;
+        this.apiCallManager = apiCallManager;
     }
 
     //스케쥴DTO를 기반으로 시간주기 만들어주는 함수만드는게좋을듯
@@ -37,14 +46,26 @@ public class CalculatorServiceImpl implements CalculatorService {
     //시간범위를 설정해서 보내자?
     //도착시간 설정알고리즘에서는 도착시간을 체크하고 DTO를 생성해야함. 아예새로만들어야하나
     public PathAndCostAndAnalysisDTO calculate(ScheduleDTO scheduleDTO){
+        requestID++;
 
         //while 문으로 paths.startTime~endTime 까지 이때 시간주기 알고리즘은 나중에생각하고 일단은 10분단위로 해보고 1분단위로 수정하기\
         ArrayList<PathAndCostAndAnalysisDTO> pathAndCostAndAnalysisDTOS = new ArrayList<>();
         LocalDateTime targetTime = LocalDateTime.parse(scheduleDTO.getStartTime());
         LocalDateTime endTime = LocalDateTime.parse(scheduleDTO.getEndTime());
 
-        // 현재 targetTime부터 endTime까지의 간격을 계산
+        //10분내 결과 받을 수 있는지 체크
+        // 필요한 API 호출 수 계산
         long intervalCount = Duration.between(targetTime, endTime).toMinutes() / 10 + 1;
+        int totalApiCallsNeeded = (int) intervalCount;
+        // 예상 대기 시간이 10분을 초과하는지 확인
+        if (apiCallManager.isExpectedWaitTimeExceedingLimit(totalApiCallsNeeded)) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "현재 서비스가 많이 사용 중입니다. 10분 뒤에 요청해 주세요.");
+        }
+
+        //비동기 실해으로 동시에 접근할 수 도 있기 때문에
+        List<Throwable> errorList = new CopyOnWriteArrayList<>();
+
+        // 현재 targetTime부터 endTime까지의 간격을 계산
         CountDownLatch latch = new CountDownLatch((int) intervalCount);
 
         targetTime = targetTime.minusMinutes(10);
@@ -52,10 +73,13 @@ public class CalculatorServiceImpl implements CalculatorService {
             targetTime = targetTime.plusMinutes(10);
             PathRequestDTO pathRequestDTO = makeRouteRequestDTO(scheduleDTO, targetTime);
 
+            logger.info("mytest apicallid: {}, calls: {}, from {}", requestID, apiCallManager.getPendingApiCalls(), scheduleDTO);
+
             //ArrayList<Path> paths = mapService.getPathFromNaverMapAPI(pathRequestDTO);
             //그렇다면 업무를 최소화
             mapService.getPathFromNaverMapAPI(pathRequestDTO)
-                    .subscribe(paths -> {
+                .subscribe(
+                    paths -> {
                         if(paths.size() == 0){
                             latch.countDown();
                             return;
@@ -81,7 +105,13 @@ public class CalculatorServiceImpl implements CalculatorService {
                         pathAndCostAndAnalysisDTOS.add(pathAndCostAndAnalysisDTO);
 
                         latch.countDown();
-                    });
+                    },
+                    throwable -> {
+                        latch.countDown();
+                        //logger
+                        errorList.add(throwable);
+                    }
+                );
         }
         //while문 끝나고 DTOS에서 최솟값찾고 그 DTO반환
         try {
@@ -94,7 +124,13 @@ public class CalculatorServiceImpl implements CalculatorService {
 
         //System.out.println(pathAndCostAndAnalysisDTOS);
         if (pathAndCostAndAnalysisDTOS.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "대중교통 이용이 불가능한 시간입니다.");
+            System.out.println(errorList);
+            if(errorList.isEmpty()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "대중교통 이용이 불가능한 시간입니다.");
+            }
+            else {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "MAP API 사용중 에러가 발생 했습니다.");
+            }
         }
 
         //pathAndCostAndAnalysisDTOS.get(0).getPathAndCosts().get(0).getPath().makeSubDuration();
