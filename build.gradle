@@ -24,6 +24,7 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
     implementation 'io.github.boostchicken:spring-data-dynamodb:5.2.5'
     //implementation platform('software.amazon.awssdk:bom:2.20.56')
     //implementation 'software.amazon.awssdk:dynamodb-enhanced'

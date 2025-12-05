@@ -7,8 +7,7 @@ import com.enm.costcalculrator.service.ApiCallManager;
 import com.enm.costcalculrator.service.MapService;
 import io.github.resilience4j.ratelimiter.RateLimiter;
 import io.github.resilience4j.reactor.ratelimiter.operator.RateLimiterOperator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -20,14 +19,17 @@ import reactor.netty.http.client.HttpClient;
 import reactor.netty.resources.ConnectionProvider;
 
 
+import java.time.Duration;
 import java.util.ArrayList;
 
 @Service
+@Slf4j
 public class MapServiceImpl implements MapService {
-
-    private static final Logger logger = LoggerFactory.getLogger(MapServiceImpl.class);
+    
     private final RateLimiter rateLimiter;
     private final ApiCallManager apiCallManager;
+
+    private static final Duration NAVER_API_TIMEOUT = Duration.ofSeconds(20);
 
     @Autowired
     public MapServiceImpl(RateLimiter rateLimiter, ApiCallManager apiCallManager) {
@@ -40,7 +42,7 @@ public class MapServiceImpl implements MapService {
 
         // API 호출 전에 카운터 증가
         apiCallManager.incrementPendingApiCalls();
-        logger.info("mytest apicalls: {}", apiCallManager.getPendingApiCalls());
+        log.info("mytest apicalls: {}", apiCallManager.getPendingApiCalls());
 
 
         ConnectionProvider connectionProvider = ConnectionProvider.builder("custom")
@@ -73,7 +75,6 @@ public class MapServiceImpl implements MapService {
                 .onStatus(HttpStatus::isError, clientResponse -> {
                     return clientResponse.bodyToMono(String.class)
                     .flatMap(errorBody -> {
-                        //logger.error()
                         return Mono.error(new RuntimeException("MAP API 에러: " + errorBody));
                     });
                 })
@@ -88,13 +89,15 @@ public class MapServiceImpl implements MapService {
                         return responseEntity.getBody().getPaths();
                     }
                 })
+                .timeout(NAVER_API_TIMEOUT)
+                .onErrorMap(java.util.concurrent.TimeoutException.class,
+                        te -> new RuntimeException("MAP API HTTP 타임아웃(" + NAVER_API_TIMEOUT.getSeconds() + "s)"))
                 .transformDeferred(RateLimiterOperator.of(rateLimiter)) // 레이트 리미터 적용;
                 .doFinally(signalType -> {
                     // API 호출 완료 후 카운터 감소
                     apiCallManager.decrementPendingApiCalls();
                 })
                 .onErrorResume(throwable -> {
-                    //logger
                     return Mono.error(new RuntimeException("MAP API 요청 중 내부 서버 에러: " + throwable));
                 });
 
@@ -103,10 +106,10 @@ public class MapServiceImpl implements MapService {
     // 요청 시 로그를 출력하는 필터 함수
     private static ExchangeFilterFunction logRequest() {
         return ExchangeFilterFunction.ofRequestProcessor(clientRequest -> {
-            logger.info("Request: {} {}", clientRequest.method(), clientRequest.url());
+            log.info("Request: {} {}", clientRequest.method(), clientRequest.url());
             clientRequest.headers()
                     .forEach((name, values) -> values.forEach(value ->
-                            logger.info("Header '{}': {}", name, value)));
+                            log.info("Header '{}': {}", name, value)));
             return Mono.just(clientRequest);
         });
     }
@@ -114,7 +117,7 @@ public class MapServiceImpl implements MapService {
     // 응답 시 로그를 출력하는 필터 함수
     private static ExchangeFilterFunction logResponse() {
         return ExchangeFilterFunction.ofResponseProcessor(clientResponse -> {
-            logger.info("Response Status: {}", clientResponse.statusCode());
+            log.info("Response Status: {}", clientResponse.statusCode());
             return Mono.just(clientResponse);
         });
     }

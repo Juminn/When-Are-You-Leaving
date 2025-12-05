@@ -46,21 +46,7 @@ public class Main {
             scheduleDTO.setEndTime("2023-09-18T19:00:00");
         }
 
-        System.out.println("-------------------------------------------------------------------------------------------------");
-        System.out.println("요청 start time:  " + LocalDateTime.now());
-        System.out.println("controlloer schedulDTO: " +scheduleDTO);
-
-        try {
-            ResponseEntity<PathAndCostAndAnalysisDTO> response = ResponseEntity.ok(calculatorService.calculate(scheduleDTO));
-            System.out.println("요청 end time:  " + LocalDateTime.now());
-            System.out.println("-------------------------------------------------------------------------------------------------");
-
-            return response;
-        } catch (ResponseStatusException e) {
-            System.out.println("요청 end time:  " + LocalDateTime.now());
-            System.out.println("-------------------------------------------------------------------------------------------------");
-            return ResponseEntity.status(e.getStatus()).body(e.getReason());
-        }
+        return ResponseEntity.ok(calculatorService.calculate(scheduleDTO));
     }
 
     @PostMapping(value =  "/survey/nextQuestion")

@@ -6,8 +6,7 @@ import com.enm.costcalculrator.service.ApiCallManager;
 import com.enm.costcalculrator.service.CalculatorService;
 import com.enm.costcalculrator.service.MapService;
 import com.enm.costcalculrator.service.MemberService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -16,11 +15,13 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 
 @Service
+@Slf4j
 public class CalculatorServiceImpl implements CalculatorService {
 
     final MapService mapService;
@@ -28,7 +29,6 @@ public class CalculatorServiceImpl implements CalculatorService {
     private final ApiCallManager apiCallManager;
 
     private int requestID = 0;
-    private static final Logger logger = LoggerFactory.getLogger(MapServiceImpl.class);
     @Autowired
     public CalculatorServiceImpl(MapService mapService, MemberService memberService, ApiCallManager apiCallManager) {
         this.mapService = mapService;
@@ -63,7 +63,7 @@ public class CalculatorServiceImpl implements CalculatorService {
         }
 
         //비동기 실해으로 동시에 접근할 수 도 있기 때문에
-        List<Throwable> errorList = new CopyOnWriteArrayList<>();
+        List<Throwable> errorList = Collections.synchronizedList(new ArrayList<>());
 
         // 현재 targetTime부터 endTime까지의 간격을 계산
         CountDownLatch latch = new CountDownLatch((int) intervalCount);
@@ -73,7 +73,7 @@ public class CalculatorServiceImpl implements CalculatorService {
             targetTime = targetTime.plusMinutes(10);
             PathRequestDTO pathRequestDTO = makeRouteRequestDTO(scheduleDTO, targetTime);
 
-            logger.info("mytest apicallid: {}, calls: {}, from {}", requestID, apiCallManager.getPendingApiCalls(), scheduleDTO);
+            log.info("mytest apicallid: {}, calls: {}, from {}", requestID, apiCallManager.getPendingApiCalls(), scheduleDTO);
 
             //ArrayList<Path> paths = mapService.getPathFromNaverMapAPI(pathRequestDTO);
             //그렇다면 업무를 최소화
@@ -107,16 +107,15 @@ public class CalculatorServiceImpl implements CalculatorService {
                         latch.countDown();
                     },
                     throwable -> {
-                        latch.countDown();
-                        //logger
                         errorList.add(throwable);
+                        latch.countDown();
                     }
                 );
         }
         //while문 끝나고 DTOS에서 최솟값찾고 그 DTO반환
         try {
             latch.await();  // 모든 subscribe 호출이 완료될 때까지 대기
-            System.out.println("All intervals processed. Proceeding with result aggregation.");
+            log.info("All intervals processed. Proceeding with result aggregation.");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Calculation interrupted.");
@@ -124,17 +123,16 @@ public class CalculatorServiceImpl implements CalculatorService {
 
         //System.out.println(pathAndCostAndAnalysisDTOS);
         if (pathAndCostAndAnalysisDTOS.isEmpty()) {
-            System.out.println(errorList);
+            log.error(errorList.toString());
             if(errorList.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "대중교통 이용이 불가능한 시간입니다.");
             }
             else {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "MAP API 사용중 에러가 발생 했습니다.");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "MAP API 사용중 에러가 발생 했습니다. error: " + errorList);
             }
         }
 
         //pathAndCostAndAnalysisDTOS.get(0).getPathAndCosts().get(0).getPath().makeSubDuration();
-        System.out.println("cal start time:  " + LocalDateTime.now());
 
         return searchMinDTO(pathAndCostAndAnalysisDTOS);
     }
